@@ -20,6 +20,19 @@ void draw(DrawingWindow &window) {
 	}
 }
 
+std::vector<float> interpolateSingleFloats(float from, float to, int numberOfValues){
+    std::vector<float> v;
+    float range = to - from;
+    float spacing = range / (numberOfValues - 1);
+    float num = from;
+
+    for (int i = 0; i < numberOfValues; ++i){
+        v.push_back(num);
+        num = num + spacing;
+    }
+    return v;
+}
+
 void handleEvent(SDL_Event event, DrawingWindow &window) {
 	if (event.type == SDL_KEYDOWN) {
 		if (event.key.keysym.sym == SDLK_LEFT) std::cout << "LEFT" << std::endl;
