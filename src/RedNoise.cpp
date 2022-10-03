@@ -33,6 +33,19 @@ std::vector<float> interpolateSingleFloats(float from, float to, int numberOfVal
     return v;
 }
 
+void drawGradient(DrawingWindow &window) {
+	window.clearPixels();
+	std::vector<float> container;
+	container = interpolateSingleFloats(255, 0, window.width);
+	for (size_t y = 0; y < window.height; y++) {
+		for (size_t x = 0; x < window.width; x++) {
+			float color = container[x];
+			uint32_t colour = (255 << 24) + (int(color) << 16) + (int(color) << 8) + int(color);
+			window.setPixelColour(x, y, colour);
+		}
+	}
+}
+
 void handleEvent(SDL_Event event, DrawingWindow &window) {
 	if (event.type == SDL_KEYDOWN) {
 		if (event.key.keysym.sym == SDLK_LEFT) std::cout << "LEFT" << std::endl;
