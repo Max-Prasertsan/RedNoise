@@ -46,6 +46,20 @@ void drawGradient(DrawingWindow &window) {
 	}
 }
 
+// triple interpolation
+std::vector<glm::vec3> interpolateThreeElementValues(glm::vec3 from, glm::vec3 to, float numberOfValues){
+    std::vector<glm::vec3> result;
+    glm::vec3 spacing = (to - from)/(numberOfValues-1);
+    for (float i = 0; i < numberOfValues; ++i){
+        result.push_back(from + i*spacing);
+    }
+    return result;
+}
+
+void drawColorGradient(DrawingWindow &window) {
+    
+}
+
 void handleEvent(SDL_Event event, DrawingWindow &window) {
 	if (event.type == SDL_KEYDOWN) {
 		if (event.key.keysym.sym == SDLK_LEFT) std::cout << "LEFT" << std::endl;
@@ -64,7 +78,8 @@ int main(int argc, char *argv[]) {
 	while (true) {
 		// We MUST poll for events - otherwise the window will freeze !
 		if (window.pollForInputEvents(event)) handleEvent(event, window);
-		draw(window);
+		//draw(window);
+		//drawGradient(window);
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
 		window.renderFrame();
 	}
