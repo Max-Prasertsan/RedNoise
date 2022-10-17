@@ -154,15 +154,15 @@ std::vector<glm::vec3> interpolateThreeElementValues(glm::vec3 from, glm::vec3 t
 
 void drawColorGradient(DrawingWindow &window) {
     window.clearPixels();
-    glm::vec3 topLeft(255, 0, 0);       //red
-    glm::vec3 topRight(0, 0, 255);      //blue
-    glm::vec3 bottomLeft(255, 255, 0);    //green
-    glm::vec3 bottomRight(0, 255, 0); //yellow
+    glm::vec3 t_Left(255, 0, 0);       //red
+    glm::vec3 t_Right(0, 0, 255);      //blue
+    glm::vec3 b_Left(255, 255, 0);    //green
+    glm::vec3 b_Right(0, 255, 0); //yellow
 
-    std::vector<glm::vec3> colour_left = interpolateThreeElementValues(topLeft, bottomLeft, window.height);
-    std::vector<glm::vec3> colour_right = interpolateThreeElementValues(topRight, bottomRight, window.height);
+    std::vector<glm::vec3> c_left = interpolateThreeElementValues(t_Left, b_Left, window.height);
+    std::vector<glm::vec3> c_right = interpolateThreeElementValues(t_Right, b_Right, window.height);
     for (size_t y = 0; y < window.height; y++){
-        std::vector<glm::vec3> colourPack = interpolateThreeElementValues(colour_left[y], colour_right[y], window.width);
+        std::vector<glm::vec3> colourPack = interpolateThreeElementValues(c_left[y], c_right[y], window.width);
         for(size_t x = 0; x < window.width; x++){
             uint32_t packed = (255 << 24) + (int(colourPack[x][0]) << 16) + (int(colourPack[x][1]) << 8) + int(colourPack[x][2]);
             window.setPixelColour(x, y, packed);
