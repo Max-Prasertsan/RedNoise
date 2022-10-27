@@ -79,6 +79,7 @@ void fillTriangle(CanvasTriangle tri, Colour c, DrawingWindow &window){
         for(float j = 0.0; j < step2; j++){
             float x1 = t.x + (x1step*i);
             float y1 = t.y + (y1step*i);
+
             float x2 = t.x + (x2step*j);
             float y2 = t.y + (y2step*j);
             drawLine(CanvasPoint(round(x1), round(y1)), CanvasPoint(round(x2), round(y2)), c, window);
