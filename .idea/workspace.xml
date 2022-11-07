@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c20d48f3-7dd2-4ace-8546-70868c127c16" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/texture.ppm" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/RedNoise.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/RedNoise.cpp" afterDir="false" />
     </list>
@@ -93,6 +92,7 @@
       <workItem from="1666011932109" duration="6414000" />
       <workItem from="1666864355669" duration="469000" />
       <workItem from="1667227140631" duration="2424000" />
+      <workItem from="1667829814192" duration="5045000" />
     </task>
     <servers />
   </component>

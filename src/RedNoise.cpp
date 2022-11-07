@@ -1,4 +1,5 @@
 #include <CanvasTriangle.h>
+#include <ModelTriangle.h>
 #include <DrawingWindow.h>
 #include <Utils.h>
 #include <fstream>
@@ -7,10 +8,16 @@
 #include <CanvasPoint.h>
 #include <Colour.h>
 #include <TextureMap.h>
+#include <unordered_map>
+
 
 
 #define WIDTH 320
 #define HEIGHT 240
+
+glm::vec3 cam(0.0, 0.0, 4.0);
+float focal = 300.0;
+
 
 void draw(DrawingWindow &window) {
 	window.clearPixels();
@@ -34,13 +41,13 @@ void drawLine(CanvasPoint from, CanvasPoint to, Colour c, DrawingWindow &window)
     float xStepSize = xDiff/numberOfSteps;
     float yStepSize = yDiff/numberOfSteps;
 
-    uint32_t c = (255 << 24) + (int(c.red) << 16) + (int(c.green) << 8 ) + int(c.blue);
+    uint32_t colour = (255 << 24) + (int(c.red) << 16) + (int(c.green) << 8 ) + int(c.blue);
 
     for (float i = 0.0; i < numberOfSteps; i++ ){
         float x = from.x + (xStepSize*i);
         float y = from.y + (yStepSize*i);
 
-        window.setPixelColour(round(x), round(y), c);
+        window.setPixelColour(round(x), round(y), colour);
     }
 }
 
@@ -187,6 +194,7 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 }
 
 
+// NOT DONE NEED WORK
 void textureMap(CanvasPoint p, CanvasTriangle t){
     TextureMap source("./texture.ppm");
     p.texturePoint = TexturePoint (source.height, source.width);
@@ -194,57 +202,111 @@ void textureMap(CanvasPoint p, CanvasTriangle t){
 }
 
 
+std::unordered_map<std::string, Colour> read_mtl(std::string filename){
+    std::unordered_map<std::string, Colour> colours;
+    std::string colourName;
+
+    std::ifstream File(filename);
+    std::string line;
+
+    while(!File.eof())
+        {
+            getline(File, line);
+            if(line == "") continue;
+
+            std::vector<std::string> parts = split(line, ' ');
+            if(parts[0] == "newmtl")
+            {
+                colourName = parts[1];
+            }
+            else if(parts[0] == "Kd")
+            {
+                Colour c(int(stof(parts[1]) * 255), int(stof(parts[2]) * 255), int(stof(parts[3]) * 255));
+                colours.insert({colourName, c});
+            }
+        }
+        File.close();
+        return colours;
+}
+
+
+// For 3d model file raeding Func
 std::vector<ModelTriangle> read3Dfile(std::string filename, float scale, std::unordered_map<std::string, Colour> colours){
+
     std::vector<ModelTriangle> triangles;
-    std::vector<glm::vec3> vertices:
-    std::string c;
+    std::vector<glm::vec3> vertices;
+    std::string colour;
 
     std::ifstream File(filename);
     std::string line;
 
 
-    while(!myfile.eof())
+    while(!File.eof())
     {
         getline(File, line);
+
+        // If blank line skip to the next one.
         if(line == "") continue;
 
-        std::vector<std::string> parts = split(line, '');
-        if (parts[0] == 'v')
+        // split each components of the line in to vector called 'parts' then compare the first part.
+        std::vector<std::string> parts = split(line, ' ');
+        if (parts[0] == "v")
         {
-            glm::vec3 vertex(stoff(parts[1]*scale, stof(parts[2])*scale, stof(parts[3])*scale));
+            glm::vec3 vertex(stof(parts[1]) * scale, stof(parts[2]) * scale, stof(parts[3]) * scale);
             vertices.push_back(vertex);
         }
         else if(parts[0] == "f")
         {
-            ModelTriangle triangle(vertices[stoi(parts[1]) - 1], vertices[stoi(parts[2] - 1)], vertices[stoi(parts[3] - 1)], colours[c]);
-            triangle.push_back(triangle);
+            ModelTriangle triangle(vertices[stoi(parts[1]) - 1], vertices[stoi(parts[2]) - 1], vertices[stoi(parts[3]) - 1], colours[colour]);
+            triangles.push_back(triangle);
         }
         else if(parts[0] == "usemtl")
         {
-            c = parts[1];
+            colour = parts[1];
         }
     }
     File.close();
     return triangles;
 }
 
+
+// Drawing the models or "Objects" given in the 3dfile.
+void draw_obj(std::vector<ModelTriangle> triangles, DrawingWindow &window){
+    for(int i = 0; i < triangles.size(); i++)
+    {
+        ModelTriangle triangle = triangles[i];
+        CanvasTriangle t;
+
+        for(int i = 0; i < triangle.vertices.size(); i++)
+        {
+            glm::vec3 vertex = triangle.vertices[i];
+            int u = -(focal * vertex.x) / (vertex.z - cam.z) + window.width/2;
+            int v = (focal * vertex.y) / (vertex.z - cam.z) + window.width/2;
+            t.vertices[i] = CanvasPoint(u, v, (vertex.z - cam.z));
+        }
+        fillTriangle(t, triangle.colour, window);
+    }
+}
+
 int main(int argc, char *argv[]) {
+
+    std::vector<ModelTriangle> t = read3Dfile("cornell-box.obj", 0.5, read_mtl("cornell-box.mt;"));
+
 	DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 	SDL_Event event;
 
-	CanvasPoint from(0, 0);
-	CanvasPoint to(window.width-1, window.height-1);
-	Colour c(144, 250, 15);
-
+	//CanvasPoint from(0, 0);
+	//CanvasPoint to(window.width-1, window.height-1);
+	//Colour c(144, 250, 15);
 
 	while (true) {
 		// We MUST poll for events - otherwise the window will freeze !
 		if (window.pollForInputEvents(event)) handleEvent(event, window);
 		//draw(window);
 		//drawGradient(window);
-		drawColorGradient(window);
+		//drawColorGradient(window);
 		//drawLine(from, to, c, window);
-
+        draw_obj(t, window);
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
 		window.renderFrame();
 	}
