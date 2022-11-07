@@ -12,8 +12,8 @@
 
 
 
-#define WIDTH 320
-#define HEIGHT 240
+#define WIDTH 600
+#define HEIGHT 600
 
 glm::vec3 cam(0.0, 0.0, 4.0);
 float focal = 300.0;
@@ -209,9 +209,9 @@ std::unordered_map<std::string, Colour> read_mtl(std::string filename){
     std::ifstream File(filename);
     std::string line;
 
-    while(!File.eof())
+    while(getline(File, line))
         {
-            getline(File, line);
+
             if(line == "") continue;
 
             std::vector<std::string> parts = split(line, ' ');
@@ -241,9 +241,8 @@ std::vector<ModelTriangle> read3Dfile(std::string filename, float scale, std::un
     std::string line;
 
 
-    while(!File.eof())
+    while(getline(File, line))
     {
-        getline(File, line);
 
         // If blank line skip to the next one.
         if(line == "") continue;
@@ -289,7 +288,6 @@ void draw_obj(std::vector<ModelTriangle> triangles, DrawingWindow &window){
 }
 
 int main(int argc, char *argv[]) {
-
     std::vector<ModelTriangle> t = read3Dfile("cornell-box.obj", 0.5, read_mtl("cornell-box.mt;"));
 
 	DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
