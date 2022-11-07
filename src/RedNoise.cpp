@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <CanvasPoint.h>
 #include <Colour.h>
+#include <TextureMap.h>
 
 
 #define WIDTH 320
@@ -112,8 +113,6 @@ void drawMultiTri(DrawingWindow &window){
 }
 
 
-
-
 std::vector<float> interpolateSingleFloats(float from, float to, int numberOfValues){
     std::vector<float> v;
     float range = to - from;
@@ -155,10 +154,10 @@ std::vector<glm::vec3> interpolateThreeElementValues(glm::vec3 from, glm::vec3 t
 
 void drawColorGradient(DrawingWindow &window) {
     window.clearPixels();
-    glm::vec3 t_Left(255, 0, 0);       //red
-    glm::vec3 t_Right(0, 0, 255);      //blue
+    glm::vec3 t_Left(255, 0, 0);      //red
+    glm::vec3 t_Right(0, 0, 255);     //blue
     glm::vec3 b_Left(255, 255, 0);    //green
-    glm::vec3 b_Right(0, 255, 0); //yellow
+    glm::vec3 b_Right(0, 255, 0);     //yellow
 
     std::vector<glm::vec3> c_left = interpolateThreeElementValues(t_Left, b_Left, window.height);
     std::vector<glm::vec3> c_right = interpolateThreeElementValues(t_Right, b_Right, window.height);
@@ -186,6 +185,32 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 	}
 }
 
+
+void textureMap(CanvasPoint p, CanvasTriangle t){
+    TextureMap source("./texture.ppm");
+    p.texturePoint = TexturePoint (source.height, source.width);
+
+}
+
+
+void read3Dfile(){
+    string line;
+    string v, valuesX[8], valuesY[8], valuesZ[8];
+    int n = 0;
+
+    ifstream myfile ("");
+    while(!myfile.eof())
+    {
+        getline (myfile,line);
+        if (line[0] == 'v')
+        {
+            myfile >> v >> valuesX[n]>> valuesY[n]>> valuesZ[n];
+            cout << valuesX[n] << "\t" << valuesY[n] << "\t" << valuesZ[n] << endl;
+            n++;
+        }
+    }
+    return 0;
+}
 
 int main(int argc, char *argv[]) {
 	DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
