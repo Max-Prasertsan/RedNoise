@@ -26,7 +26,7 @@ void draw(DrawingWindow &window) {
 }
 
 
-void drawLine(CanvasPoint from, CanvasPoint to, Colour colour, DrawingWindow &window){
+void drawLine(CanvasPoint from, CanvasPoint to, Colour c, DrawingWindow &window){
     float xDiff = to.x - from.x;
     float yDiff = to.y - from.y;
     float numberOfSteps = std::max(abs(xDiff), abs(yDiff));
@@ -34,7 +34,7 @@ void drawLine(CanvasPoint from, CanvasPoint to, Colour colour, DrawingWindow &wi
     float xStepSize = xDiff/numberOfSteps;
     float yStepSize = yDiff/numberOfSteps;
 
-    uint32_t c = (255 << 24) + (int(colour.red) << 16) + (int(colour.green) << 8 ) + int(colour.blue);
+    uint32_t c = (255 << 24) + (int(c.red) << 16) + (int(c.green) << 8 ) + int(c.blue);
 
     for (float i = 0.0; i < numberOfSteps; i++ ){
         float x = from.x + (xStepSize*i);
@@ -88,6 +88,7 @@ void fillTriangle(CanvasTriangle tri, Colour c, DrawingWindow &window){
         }
     }
 }
+
 
 void drawFillTri(DrawingWindow &window){
     Colour c(rand()%256, rand()%256, rand()%256);
@@ -193,23 +194,38 @@ void textureMap(CanvasPoint p, CanvasTriangle t){
 }
 
 
-void read3Dfile(){
-    string line;
-    string v, valuesX[8], valuesY[8], valuesZ[8];
-    int n = 0;
+std::vector<ModelTriangle> read3Dfile(std::string filename, float scale, std::unordered_map<std::string, Colour> colours){
+    std::vector<ModelTriangle> triangles;
+    std::vector<glm::vec3> vertices:
+    std::string c;
 
-    ifstream myfile ("");
+    std::ifstream File(filename);
+    std::string line;
+
+
     while(!myfile.eof())
     {
-        getline (myfile,line);
-        if (line[0] == 'v')
+        getline(File, line);
+        if(line == "") continue;
+
+        std::vector<std::string> parts = split(line, '');
+        if (parts[0] == 'v')
         {
-            myfile >> v >> valuesX[n]>> valuesY[n]>> valuesZ[n];
-            cout << valuesX[n] << "\t" << valuesY[n] << "\t" << valuesZ[n] << endl;
-            n++;
+            glm::vec3 vertex(stoff(parts[1]*scale, stof(parts[2])*scale, stof(parts[3])*scale));
+            vertices.push_back(vertex);
+        }
+        else if(parts[0] == "f")
+        {
+            ModelTriangle triangle(vertices[stoi(parts[1]) - 1], vertices[stoi(parts[2] - 1)], vertices[stoi(parts[3] - 1)], colours[c]);
+            triangle.push_back(triangle);
+        }
+        else if(parts[0] == "usemtl")
+        {
+            c = parts[1];
         }
     }
-    return 0;
+    File.close();
+    return triangles;
 }
 
 int main(int argc, char *argv[]) {
