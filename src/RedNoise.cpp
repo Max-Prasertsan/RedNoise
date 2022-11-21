@@ -187,14 +187,14 @@ void textureMap(CanvasPoint p, CanvasTriangle t){
 }
 
 
-std::unordered_map<std::string, Colour> parse_mtl(std::string& filename){
+std::unordered_map<std::string, Colour> parse_Mtl(std::string filename){
     std::unordered_map<std::string, Colour> colours;
     std::string colour;
 
-    std::ifstream file(filename);
+    std::ifstream colourFile(filename);
     std::string line;
 
-    while(getline(file, line))
+    while(getline(colourFile, line))
         {
             if(line == "") continue;
 
@@ -205,24 +205,25 @@ std::unordered_map<std::string, Colour> parse_mtl(std::string& filename){
             }
             else if(parts[0] == "Kd")
             {
-                Colour c(float(std::stof(parts[1]) * 255), float(std::stof(parts[2]) * 255), float(std::stof(parts[3]) * 255));
+                Colour c(float(std::stof(parts[1]) * 255),
+                         float(std::stof(parts[2]) * 255),
+                         float(std::stof(parts[3]) * 255));
                 colours[colour] = c;
             }
         }
-        file.close();
+        colourFile.close();
         return colours;
 }
 
 
 // For 3d model file reading Func
-std::vector<ModelTriangle> parse_Obj(std::string& filename, float scale, std::unordered_map<std::string, Colour> colours){
+std::vector<ModelTriangle> parse_Obj(std::string filename, float scale, std::unordered_map<std::string, Colour> colours){
     std::vector<ModelTriangle> triangles;
     std::vector<glm::vec3> vertices;
     std::string colour;
 
     std::ifstream file(filename);
     std::string line;
-
 
     while(getline(file, line))
     {
@@ -234,21 +235,20 @@ std::vector<ModelTriangle> parse_Obj(std::string& filename, float scale, std::un
         std::vector<std::string> parts = split(line, ' ');
         if (parts[0] == "v")
         {
-            glm::vec3 vertex(std::stof(parts[1]) * scale, std::stof(parts[2]) * scale, std::stof(parts[3]) * scale);
+            glm::vec3 vertex(std::stof(parts[1]) * scale,
+                             std::stof(parts[2]) * scale,
+                             std::stof(parts[3]) * scale);
             vertices.push_back(vertex);
         }
 
-        else if(parts[0] == "f")
+        if(parts[0] == "f")
         {
-            ModelTriangle triangle(vertices[std::stoi(parts[1]) - 1], vertices[std::stoi(parts[2]) - 1], vertices[std::stoi(parts[3]) - 1], colours[colour]);
+            ModelTriangle triangle(vertices[std::stoi(parts[1]) - 1],
+                                   vertices[std::stoi(parts[2]) - 1],
+                                   vertices[std::stoi(parts[3]) - 1],
+                                   colours[colour]);
             triangles.push_back(triangle);
         }
-
-        else if(parts[0] == "usemtl")
-        {
-            colour = parts[1];
-        }
-
     }
     file.close();
     return triangles;
@@ -267,7 +267,11 @@ CanvasPoint getCanvasPoint(glm::vec3 cam_position, glm::vec3 vertex, float focal
 
 // Drawing the models or "Objects" given in the 3dfile.
 void draw_obj(DrawingWindow &window){
-    std::vector<ModelTriangle> t = parse_Obj("./cornell-box.obj", 0.35, parse_mtl("./cornell-box.mtl"));
+    std::string filename = "./cornell-box.obj";
+    float scale = 0.35;
+    std::string filename2 = "./cornell-box.mtl";
+    std::unordered_map<std::string, Colour> colours = parse_Mtl(filename2);
+    std::vector<ModelTriangle> t = parse_Obj( filename, scale, colours);
     uint32_t colourNum = (255 << 24) + (255 << 16) + (255 << 8) + 255;
     for(auto mt : t){
         for(int i = 0; i < 3; i ++){
@@ -283,8 +287,12 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 		else if (event.key.keysym.sym == SDLK_RIGHT) std::cout << "RIGHT" << std::endl;
 		else if (event.key.keysym.sym == SDLK_UP) std::cout << "UP" << std::endl;
 		else if (event.key.keysym.sym == SDLK_DOWN) std::cout << "DOWN" << std::endl;
-		else if (event.key.keysym.sym == SDLK_u)  drawMultiTri(window);
-		else if (event.key.keysym.sym == SDLK_f) drawFillTri(window);
+		else if (event.key.keysym.sym == SDLK_t) {
+		    std::cout << "obj running" << std::endl;
+		    draw_obj(window);
+		}
+		//else if (event.key.keysym.sym == SDLK_u)  drawMultiTri(window);
+		//else if (event.key.keysym.sym == SDLK_f) drawFillTri(window);
 	} else if (event.type == SDL_MOUSEBUTTONDOWN) {
 		window.savePPM("output.ppm");
 		window.saveBMP("output.bmp");
