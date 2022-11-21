@@ -205,7 +205,8 @@ std::unordered_map<std::string, Colour> parse_Mtl(std::string filename){
             }
             else if(parts[0] == "Kd")
             {
-                Colour c(float(std::stof(parts[1]) * 255),
+                Colour c(colour,
+                         float(std::stof(parts[1]) * 255),
                          float(std::stof(parts[2]) * 255),
                          float(std::stof(parts[3]) * 255));
                 colours[colour] = c;
@@ -265,14 +266,16 @@ CanvasPoint getCanvasPoint(glm::vec3 cam_position, glm::vec3 vertex, float focal
 }
 
 
-// Drawing the models or "Objects" given in the 3dfile.
-void draw_obj(DrawingWindow &window){
-    std::string filename = "./cornell-box.obj";
+// Drawing the points given in the 3dfile.
+void draw_Points(DrawingWindow &window){
+    std::string obj_file = "./cornell-box.obj";
     float scale = 0.35;
-    std::string filename2 = "./cornell-box.mtl";
-    std::unordered_map<std::string, Colour> colours = parse_Mtl(filename2);
-    std::vector<ModelTriangle> t = parse_Obj( filename, scale, colours);
+    std::string mtl_file = "./cornell-box.mtl";
+
+    std::unordered_map<std::string, Colour> colours = parse_Mtl(mtl_file);
+    std::vector<ModelTriangle> t = parse_Obj( obj_file, scale, colours);
     uint32_t colourNum = (255 << 24) + (255 << 16) + (255 << 8) + 255;
+
     for(auto mt : t){
         for(int i = 0; i < 3; i ++){
             CanvasPoint currentPoint = getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[i], 2);
@@ -280,6 +283,40 @@ void draw_obj(DrawingWindow &window){
         }
     }
 }
+
+
+// draw the outline/frame of the models
+void draw_Frame(DrawingWindow &window){
+    std::string obj_file = "./cornell-box.obj";
+    float scale = 0.35;
+    std::string mtl_file = "./cornell-box.mtl";
+
+    std::unordered_map<std::string, Colour> colours = parse_Mtl(mtl_file);
+    std::vector<ModelTriangle> t = parse_Obj( obj_file, scale, colours);
+    uint32_t colourNumeric = (255 << 24) + (255 << 16) + (255 << 8) + 255;
+    Colour colour = Colour(255, 255, 255);
+
+    for (auto mt : t) {
+    	Colour colour = Colour(255, 255, 255);
+    	CanvasTriangle t = CanvasTriangle(getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[0], 2),
+    	                                                 getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[1], 2),
+    	                                                 getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[2], 2));
+    	drawTriangle(t, colour, window);
+    }
+}
+
+
+void draw_Obj(DrawingWindow &window){
+    std::string obj_file = "./cornell-box.obj";
+        float scale = 0.35;
+        std::string mtl_file = "./cornell-box.mtl";
+
+        std::unordered_map<std::string, Colour> colours = parse_Mtl(mtl_file);
+        std::vector<ModelTriangle> t = parse_Obj( obj_file, scale, colours);
+        uint32_t colourNumeric = (255 << 24) + (255 << 16) + (255 << 8) + 255;
+        Colour colour = Colour(255, 255, 255);
+}
+
 
 void handleEvent(SDL_Event event, DrawingWindow &window) {
 	if (event.type == SDL_KEYDOWN) {
@@ -289,7 +326,7 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 		else if (event.key.keysym.sym == SDLK_DOWN) std::cout << "DOWN" << std::endl;
 		else if (event.key.keysym.sym == SDLK_t) {
 		    std::cout << "obj running" << std::endl;
-		    draw_obj(window);
+		    draw_Points(window);
 		}
 		//else if (event.key.keysym.sym == SDLK_u)  drawMultiTri(window);
 		//else if (event.key.keysym.sym == SDLK_f) drawFillTri(window);
@@ -315,7 +352,8 @@ int main(int argc, char *argv[]) {
 		//drawGradient(window);
 		//drawColorGradient(window);
 		//drawLine(from, to, c, window);
-        draw_obj(window);
+        //draw_Point(window);
+        draw_Frame(window);
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
 		window.renderFrame();
 	}
