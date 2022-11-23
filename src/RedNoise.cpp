@@ -51,6 +51,34 @@ void drawLine(CanvasPoint from, CanvasPoint to, Colour c, DrawingWindow &window)
     }
 }
 
+void drawLineDepth(CanvasPoint from, CanvasPoint to, Colour c, DrawingWindow &window, float** depthBuff){
+    float xDiff = to.x - from.x;
+    float yDiff = to.y - from.y;
+    float depthDiff = to.depth - from.depth;
+
+    float numberOfSteps = std::max(abs(xDiff), abs(yDiff));
+
+    float xStepSize = xDiff/numberOfSteps;
+    float yStepSize = yDiff/numberOfSteps;
+
+    float depthStepSize = depthDiff / numberOfSteps;
+
+    uint32_t colour = (255 << 24) + (int(c.red) << 16) + (int(c.green) << 8 ) + int(c.blue);
+
+    for (float i = 0.0; i < numberOfSteps; i++ ){
+        float x = from.x + (xStepSize*i);
+        float y = from.y + (yStepSize*i);
+        float d = from.depth + (depthStepSize * i);
+
+        float depthInverse = 1 / d;
+        if (depthInverse > depthBuff[int(y)][int(x)])
+        {
+            depthBuff[int(y)][int(x)] = depthInverse;
+            window.setPixelColour(round(x), round(y), colour);
+        }
+        //window.setPixelColour(round(x), round(y), colour);
+    }
+}
 
 void drawTriangle(CanvasTriangle tri, Colour colour, DrawingWindow &window){
     CanvasPoint a = tri[0];
@@ -160,14 +188,59 @@ void fillTriangle(CanvasTriangle tri, Colour c, DrawingWindow &window){
 
             float x2 = t.x + (x2step*j);
             float y2 = t.y + (y2step*j);
-            drawLine(CanvasPoint(round(x1), round(y1)), CanvasPoint(round(x2), round(y2)), c, window);
-            drawTriangle(tri, Colour(255, 255, 255), window);
+            drawLine(CanvasPoint(x1, y1), CanvasPoint(x2, y2), c, window);
+            //drawTriangle(tri, Colour(255, 255, 255), window);
         }
     }
 }
 
 
-void drawFillTri(DrawingWindow &window){
+void fillTriangleDepth(CanvasTriangle tri, Colour c, DrawingWindow &window, float** depthBuff){
+    // t --> top, m --> middle, b --> bottom
+    CanvasPoint t = tri.vertices[0];
+    CanvasPoint m = tri.vertices[1];
+    CanvasPoint b = tri.vertices[2];
+
+    // top - mid
+    float x1Diff = m.x - t.x;
+    float y1Diff = m.y - t.y;
+    float depthDiff1 = m.depth - t.depth;
+
+    // top - bottom
+    float x2Diff = b.x - t.x;
+    float y2Diff = b.y - t.y;
+    float depthDiff2 = b.depth - t.depth;
+
+    float step1 = std::max(abs(x1Diff), abs(y1Diff));
+    float step2 = std::max(abs(x2Diff), abs(y2Diff));
+
+    float depthStepSize1 = depthDiff1 / step1;
+    float depthStepSize2 = depthDiff2 / step2;
+
+    float x1step = x1Diff/step1;
+    float x2step = x2Diff/step2;
+    float y1step = y1Diff/step1;
+    float y2step = y2Diff/step2;
+
+    for(float i = 0.0; i < step1; i++){
+        for(float j = 0.0; j < step2; j++){
+            float x1 = t.x + (x1step*i);
+            float y1 = t.y + (y1step*i);
+            float d1 = t.depth + (depthStepSize1*i);
+
+            float x2 = t.x + (x2step*j);
+            float y2 = t.y + (y2step*j);
+            float d2 = t.depth + (depthStepSize2*j);
+
+
+            drawLineDepth(CanvasPoint(x1, y1, d1), CanvasPoint(x2, y2, d2), c, window, depthBuff);
+            //drawTriangle(tri, Colour(255, 255, 255), window);
+        }
+    }
+}
+
+
+void drawRandFillTri(DrawingWindow &window){
     Colour c(rand()%256, rand()%256, rand()%256);
 
     CanvasPoint p1(rand()%320, rand()%240);
@@ -244,11 +317,17 @@ std::vector<ModelTriangle> parse_Obj(std::string filename, float scale, std::uno
 
         if(parts[0] == "f")
         {
+            Colour triColour = colours[colour];
             ModelTriangle triangle(vertices[std::stoi(parts[1]) - 1],
                                    vertices[std::stoi(parts[2]) - 1],
                                    vertices[std::stoi(parts[3]) - 1],
-                                   colours[colour]);
+                                   triColour);
             triangles.push_back(triangle);
+        }
+
+        if (parts[0] == "usemtl")
+        {
+            colour = parts[1];
         }
     }
     file.close();
@@ -294,27 +373,69 @@ void draw_Frame(DrawingWindow &window){
     std::unordered_map<std::string, Colour> colours = parse_Mtl(mtl_file);
     std::vector<ModelTriangle> t = parse_Obj( obj_file, scale, colours);
     uint32_t colourNumeric = (255 << 24) + (255 << 16) + (255 << 8) + 255;
-    Colour colour = Colour(255, 255, 255);
+    Colour c = Colour(255, 255, 255);
 
-    for (auto mt : t) {
+    for (auto mt : t)
+    {
     	Colour colour = Colour(255, 255, 255);
     	CanvasTriangle t = CanvasTriangle(getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[0], 2),
-    	                                                 getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[1], 2),
-    	                                                 getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[2], 2));
-    	drawTriangle(t, colour, window);
+    	                                  getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[1], 2),
+    	                                  getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[2], 2));
+    	drawTriangle(t, c, window);
     }
 }
 
 
-void draw_Obj(DrawingWindow &window){
+void draw_Rasterised(DrawingWindow &window){
     std::string obj_file = "./cornell-box.obj";
-        float scale = 0.35;
-        std::string mtl_file = "./cornell-box.mtl";
+    float scale = 0.35;
+    std::string mtl_file = "./cornell-box.mtl";
 
-        std::unordered_map<std::string, Colour> colours = parse_Mtl(mtl_file);
-        std::vector<ModelTriangle> t = parse_Obj( obj_file, scale, colours);
-        uint32_t colourNumeric = (255 << 24) + (255 << 16) + (255 << 8) + 255;
-        Colour colour = Colour(255, 255, 255);
+    std::unordered_map<std::string, Colour> colours = parse_Mtl(mtl_file);
+    std::vector<ModelTriangle> t = parse_Obj( obj_file, scale, colours);
+    uint32_t colourNumeric = (255 << 24) + (255 << 16) + (255 << 8) + 255;
+    Colour colour = Colour(255, 255, 255);
+
+    for (auto mt:t)
+    {
+        Colour c = mt.colour;
+    	CanvasTriangle t = CanvasTriangle(getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[0], 2),
+    	                                  getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[1], 2),
+    	                                  getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[2], 2));
+    	fillTriangle(t, c, window);
+    }
+}
+
+
+void draw_RasterisedDepth(DrawingWindow &window){
+    std::string obj_file = "./cornell-box.obj";
+    float scale = 0.35;
+    std::string mtl_file = "./cornell-box.mtl";
+
+    std::unordered_map<std::string, Colour> colours = parse_Mtl(mtl_file);
+    std::vector<ModelTriangle> t = parse_Obj( obj_file, scale, colours);
+    uint32_t colourNumeric = (255 << 24) + (255 << 16) + (255 << 8) + 255;
+    Colour colour = Colour(255, 255, 255);
+
+    // initialise the depth 2d array as a pointers
+    float** depthBuff = new float*[HEIGHT];
+    for (int i = 0; i < HEIGHT; i++)
+    {
+        depthBuff[i] = new float[WIDTH];
+        for (int j = 0; j < WIDTH; j++)
+        {
+            depthBuff[i][j] = 0;
+        }
+    }
+
+    for (auto mt:t)
+        {
+            Colour c = mt.colour;
+        	CanvasTriangle t = CanvasTriangle(getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[0], 2),
+        	                                  getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[1], 2),
+        	                                  getCanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[2], 2));
+        	fillTriangleDepth(t, c, window, depthBuff);
+        }
 }
 
 
@@ -324,13 +445,16 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 		else if (event.key.keysym.sym == SDLK_RIGHT) std::cout << "RIGHT" << std::endl;
 		else if (event.key.keysym.sym == SDLK_UP) std::cout << "UP" << std::endl;
 		else if (event.key.keysym.sym == SDLK_DOWN) std::cout << "DOWN" << std::endl;
-		else if (event.key.keysym.sym == SDLK_t) {
-		    std::cout << "obj running" << std::endl;
-		    draw_Points(window);
-		}
+		//else if (event.key.keysym.sym == SDLK_t)
+		//{
+		 //   std::cout << "obj running" << std::endl;
+		 //   draw_Points(window);
+		//}
 		//else if (event.key.keysym.sym == SDLK_u)  drawMultiTri(window);
-		//else if (event.key.keysym.sym == SDLK_f) drawFillTri(window);
-	} else if (event.type == SDL_MOUSEBUTTONDOWN) {
+		//else if (event.key.keysym.sym == SDLK_f) drawRandFillTri(window);
+	}
+	else if (event.type == SDL_MOUSEBUTTONDOWN)
+	{
 		window.savePPM("output.ppm");
 		window.saveBMP("output.bmp");
 	}
@@ -345,7 +469,8 @@ int main(int argc, char *argv[]) {
 	//CanvasPoint to(window.width-1, window.height-1);
 	//Colour c(144, 250, 15);
 
-	while (true) {
+	while (true)
+	{
 		// We MUST poll for events - otherwise the window will freeze !
 		if (window.pollForInputEvents(event)) handleEvent(event, window);
 		//draw(window);
@@ -353,7 +478,9 @@ int main(int argc, char *argv[]) {
 		//drawColorGradient(window);
 		//drawLine(from, to, c, window);
         //draw_Point(window);
-        draw_Frame(window);
+        //draw_Frame(window);
+        //draw_Rasterised(window);
+        draw_RasterisedDepth(window);
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
 		window.renderFrame();
 	}
