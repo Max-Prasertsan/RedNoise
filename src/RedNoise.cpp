@@ -51,6 +51,7 @@ void drawLine(CanvasPoint from, CanvasPoint to, Colour c, DrawingWindow &window)
     }
 }
 
+
 void drawLineDepth(CanvasPoint from, CanvasPoint to, Colour c, DrawingWindow &window, float** depthBuff){
     float xDiff = to.x - from.x;
     float yDiff = to.y - from.y;
@@ -74,11 +75,12 @@ void drawLineDepth(CanvasPoint from, CanvasPoint to, Colour c, DrawingWindow &wi
         if (depthInverse > depthBuff[int(y)][int(x)])
         {
             depthBuff[int(y)][int(x)] = depthInverse;
-            window.setPixelColour(round(x), round(y), colour);
+            window.setPixelColour(x, y, colour);
         }
         //window.setPixelColour(round(x), round(y), colour);
     }
 }
+
 
 void drawTriangle(CanvasTriangle tri, Colour colour, DrawingWindow &window){
     CanvasPoint a = tri[0];
