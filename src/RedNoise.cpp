@@ -15,7 +15,7 @@
 #define HEIGHT 240
 
 //#define ini_cam_position vec3(0.0, 0.0, 4.0)
-//#define ini_focal_length 2.00
+#define ini_focal_length 2.00
 
 glm::vec3 cam_position = glm::vec3(0.0, 0.0, 4.0);
 glm::mat3 cameraOrMat = glm::mat3(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1));
@@ -524,11 +524,12 @@ void draw_RasterisedDepth(DrawingWindow &window){
     for (auto mt:t)
         {
             Colour c = mt.colour;
-        	CanvasTriangle t = CanvasTriangle(get_CanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[0], 2),
-        	                                  get_CanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[1], 2),
-        	                                  get_CanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[2], 2));
+        	CanvasTriangle t = CanvasTriangle(get_CanvasPoint(cam_position, mt.vertices[0], 2),
+        	                                  get_CanvasPoint(cam_position, mt.vertices[1], 2),
+        	                                  get_CanvasPoint(cam_position, mt.vertices[2], 2));
         	fill_TriangleDepth(t, c, window, depthBuff);
         }
+    std::cout << "render" << std::endl;
 }
 
 
@@ -552,7 +553,16 @@ void draw_RasterisedDepthByCam(DrawingWindow& window, glm::vec3 cam_position, gl
     std::unordered_map<std::string, Colour> colours = parse_Mtl(mtl_file);
     std::vector<ModelTriangle> t = parse_Obj( obj_file, scale, colours);
 
-	std::vector<float> depth_scheme(HEIGHT * WIDTH, 0);
+    // initialise the depth 2d array as a pointers
+    float** depthBuff = new float*[HEIGHT];
+    for (int i = 0; i < HEIGHT; i++)
+    {
+        depthBuff[i] = new float[WIDTH];
+        for (int j = 0; j < WIDTH; j++)
+        {
+            depthBuff[i][j] = 0;
+        }
+    }
 
 	for (auto mt : t) {
 		Colour c = mt.colour;
@@ -561,33 +571,37 @@ void draw_RasterisedDepthByCam(DrawingWindow& window, glm::vec3 cam_position, gl
 		                                  get_CanvasPointByMat(cam_position, cam_or, mt.vertices[1], 2, 150),
 		                                  get_CanvasPointByMat(cam_position, cam_or, mt.vertices[2], 2, 150));
 
-		fill_TriangleScheme(t, c, window, depth_scheme);
+		fill_TriangleDepth(t, c, window, depthBuff);
 	}
 }
 
 
 void move_CameraLeft(DrawingWindow& window, glm::vec3 &cam_position) {
 	cam_position.x -= 1;
-	//std::cout << "Window Clear" << std::endl;
+	window.clearPixels();
+	std::cout << "Left" << std::endl;
 }
 
 
 void move_CameraRight(DrawingWindow& window, glm::vec3 &cam_position) {
 	cam_position.x += 1;
-	//std::cout << "Window Clear" << std::endl;
+	window.clearPixels();
+	std::cout << "Right" << std::endl;
 }
 
 
 void move_CameraUp(DrawingWindow& window, glm::vec3 &cam_position) {
 	cam_position.y -= 1;
-	//std::cout << "Window Clear" << std::endl;
+	window.clearPixels();
+	std::cout << "Up" << std::endl;
 
 }
 
 
 void move_CameraDown(DrawingWindow& window, glm::vec3 &cam_position) {
 	cam_position.y += 1;
-	//std::cout << "Window Clear" << std::endl;
+	window.clearPixels();
+	std::cout << "Down" << std::endl;
 }
 
 
@@ -646,17 +660,15 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 		else if (event.key.keysym.sym == SDLK_RIGHT) move_CameraRight(window, cam_position);
 		else if (event.key.keysym.sym == SDLK_UP) move_CameraUp(window, cam_position);
 		else if (event.key.keysym.sym == SDLK_DOWN) move_CameraDown(window, cam_position);
+        else if (event.key.keysym.sym == SDLK_q) rotate_Up(window, cam_position);
+        else if (event.key.keysym.sym == SDLK_w) rotate_Clock(window, cam_position);
 
-		if (event.key.keysym.sym == SDLK_a) move_CameraLeft(window, cam_position);
-        else if (event.key.keysym.sym == SDLK_d) move_CameraRight(window, cam_position);
-        else if (event.key.keysym.sym == SDLK_w) move_CameraUp(window, cam_position);
-        else if (event.key.keysym.sym == SDLK_s) move_CameraDown(window, cam_position);
+        else if (event.key.keysym.sym == SDLK_a) rotate_UpMat(window, cam_position, cameraOrMat);
+        else if (event.key.keysym.sym == SDLK_s) rotate_ClockMat(window, cam_position, cameraOrMat);
 
-		else if (event.key.keysym.sym == SDLK_u)  draw_MultiTri(window);
-		else if (event.key.keysym.sym == SDLK_f) draw_RandFillTri(window);
-		else if (event.key.keysym.sym == SDLK_c) window.clearPixels();
-		else if (event.key.keysym.sym == SDLK_e) rotate_Up(window, cam_position);
-        else if (event.key.keysym.sym == SDLK_q) rotate_ClockMat(window, cam_position, cameraOrMat);
+		//else if (event.key.keysym.sym == SDLK_u)  draw_MultiTri(window);
+		//else if (event.key.keysym.sym == SDLK_f) draw_RandFillTri(window);
+		//else if (event.key.keysym.sym == SDLK_c) window.clearPixels();
 	}
 	else if (event.type == SDL_MOUSEBUTTONDOWN)
 	{
@@ -665,6 +677,19 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 	}
 }
 
+
+void draw(DrawingWindow &window){
+    window.clearPixels();
+    //draw_Red(window);
+    //drawGradient(window);
+    //drawColorGradient(window);
+    //drawLine(from, to, c, window);
+    //draw_Point(window);
+    //draw_Frame(window);
+    //draw_Rasterised(window);
+    //draw_RasterisedDepth(window);
+    draw_RasterisedDepthByCam(window, cam_position, cameraOrMat);
+}
 
 int main(int argc, char *argv[]) {
 	DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
@@ -678,14 +703,7 @@ int main(int argc, char *argv[]) {
 	{
 		// We MUST poll for events - otherwise the window will freeze !
 		if (window.pollForInputEvents(event)) handleEvent(event, window);
-		//draw_Red(window);
-		//drawGradient(window);
-		//drawColorGradient(window);
-		//drawLine(from, to, c, window);
-        //draw_Point(window);
-        //draw_Frame(window);
-        //draw_Rasterised(window);
-        draw_RasterisedDepth(window);
+        draw(window);
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
 		window.renderFrame();
 	}

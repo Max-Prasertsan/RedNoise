@@ -3,6 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="c20d48f3-7dd2-4ace-8546-70868c127c16" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/output.bmp" beforeDir="false" afterPath="$PROJECT_DIR$/output.bmp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/output.ppm" beforeDir="false" afterPath="$PROJECT_DIR$/output.ppm" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/RedNoise.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/RedNoise.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -96,7 +98,7 @@
       <workItem from="1667916182489" duration="15046000" />
       <workItem from="1669212358075" duration="3648000" />
       <workItem from="1669305524274" duration="106000" />
-      <workItem from="1669721645196" duration="5171000" />
+      <workItem from="1669721645196" duration="8199000" />
     </task>
     <servers />
   </component>
