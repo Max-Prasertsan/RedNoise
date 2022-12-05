@@ -11,14 +11,15 @@
 #include <unordered_map>
 
 
-#define WIDTH 320
-#define HEIGHT 240
+#define WIDTH 600
+#define HEIGHT 600
 
 //#define ini_cam_position vec3(0.0, 0.0, 4.0)
 #define ini_focal_length 2.00
 
 glm::vec3 cam_position = glm::vec3(0.0, 0.0, 4.0);
 glm::mat3 cameraOrMat = glm::mat3(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1));
+bool orbit;
 
 
 void draw_Red(DrawingWindow &window) {
@@ -53,6 +54,49 @@ void draw_Line(CanvasPoint from, CanvasPoint to, Colour c, DrawingWindow &window
     }
 }
 
+
+std::vector<CanvasPoint> interpolateTexture(CanvasPoint from, CanvasPoint to, int numberOfValues) {
+	std::vector<CanvasPoint> steps;
+	float stepSizeX = (to.x - from.x) / (numberOfValues - 1);
+	float stepSizeY = (to.y - from.y) / (numberOfValues - 1);
+	float stepSizeTextureX = (to.texturePoint.x - from.texturePoint.x) / (numberOfValues - 1);
+	float stepSizeTextureY = (to.texturePoint.y - from.texturePoint.y) / (numberOfValues - 1);
+
+	for (int i = 0; i < numberOfValues; i++) {
+		CanvasPoint n = CanvasPoint(from.x + i * stepSizeX, from.y + i * stepSizeY);
+		n.texturePoint.x = from.texturePoint.x + i * stepSizeTextureX;
+		n.texturePoint.y = from.texturePoint.y + i * stepSizeTextureY;
+		steps.push_back(n);
+	}
+
+	return steps;
+}
+
+
+void draw_TextureLine(CanvasPoint from, CanvasPoint to, TextureMap texture, DrawingWindow &window){
+    std::cout << "!!New Line" << std::endl;
+
+    float xDiff = to.x - from.x;
+    float yDiff = to.y - from.y;
+    float numberOfSteps = std::max(abs(xDiff), abs(yDiff));
+
+    std::vector<CanvasPoint> canvas_line = interpolateTexture(from, to, numberOfSteps);
+	if (canvas_line.size() == 1) {
+		uint32_t colourNum = texture.pixels[from.texturePoint.x + from.texturePoint.y * texture.width];
+		window.setPixelColour(round(from.x), round(from.y), colourNum);
+		return;
+	}
+
+    std::cout << "Draw From: " << from << " t.x: " << from.texturePoint.x << " t.y: " << from.texturePoint.y << std::endl;
+	std::cout << "Draw To: " << to << " t.x: " << to.texturePoint.x << " t.y: " << to.texturePoint.y << std::endl;
+	for (auto c: canvas_line) {
+	    std::cout << "Draw: " << c << " t.x: " << c.texturePoint.x << " t.y: " << c.texturePoint.y << std::endl;
+		float x = c.texturePoint.x;
+		float y = c.texturePoint.y;
+		uint32_t colourNum = texture.pixels.at(x + y * texture.width);
+		window.setPixelColour(round(c.x), round(c.y), colourNum);
+	}
+}
 
 void draw_LineDepth(CanvasPoint from, CanvasPoint to, Colour c, DrawingWindow &window, float** depthBuff){
     float xDiff = to.x - from.x;
@@ -251,6 +295,59 @@ void fill_Triangle(CanvasTriangle tri, Colour c, DrawingWindow &window){
 }
 
 
+void fill_TriangleTexture(CanvasTriangle tri, DrawingWindow &window){
+    TextureMap texture = TextureMap("texture.ppm");
+
+    // t --> top, m --> middle, b --> bottom
+    CanvasPoint t = tri.vertices[0];
+    CanvasPoint m = tri.vertices[1];
+    CanvasPoint b = tri.vertices[2];
+
+    float x1Diff = m.x - t.x;
+    float y1Diff = m.y - t.y;
+
+    float x2Diff = b.x - t.x;
+    float y2Diff = b.y - t.y;
+
+    float step1 = std::max(abs(x1Diff), abs(y1Diff));
+    float step2 = std::max(abs(x2Diff), abs(y2Diff));
+
+    float x1step = x1Diff/step1;
+    float x2step = x2Diff/step2;
+    float y1step = y1Diff/step1;
+    float y2step = y2Diff/step2;
+
+    for(float i = 0.0; i < step1; i++){
+        for(float j = 0.0; j < step2; j++){
+            float x1 = t.x + (x1step*i);
+            float y1 = t.y + (y1step*i);
+
+            float x2 = t.x + (x2step*j);
+            float y2 = t.y + (y2step*j);
+
+            std::cout << "before texture line" << std::endl;
+            draw_TextureLine(CanvasPoint(x1, y1), CanvasPoint(x2, y2), texture, window);
+        }
+    }
+}
+
+
+void draw_TextureTriangle(DrawingWindow &window){
+    CanvasPoint t = CanvasPoint(160, 10);
+    t.texturePoint = TexturePoint(195, 5);
+
+    CanvasPoint m = CanvasPoint(10, 150);
+    m.texturePoint = TexturePoint(65, 330);
+
+    CanvasPoint b = CanvasPoint(300, 230);
+    b.texturePoint = TexturePoint(395, 380);
+
+    CanvasTriangle tri = CanvasTriangle(t, m, b);
+
+    fill_TriangleTexture(tri, window);
+}
+
+
 void fill_TriangleDepth(CanvasTriangle tri, Colour c, DrawingWindow &window, float** depthBuff){
     // t --> top, m --> middle, b --> bottom
     CanvasPoint t = tri.vertices[0];
@@ -305,14 +402,6 @@ void draw_RandFillTri(DrawingWindow &window){
     CanvasTriangle tri(p1, p2, p3);
 
     fill_Triangle(tri, c, window);
-}
-
-
-// NOT DONE. NEED WORK
-void textureMap(CanvasPoint p, CanvasTriangle t){
-    TextureMap source("./texture.ppm");
-    p.texturePoint = TexturePoint (source.height, source.width);
-
 }
 
 
@@ -577,14 +666,14 @@ void draw_RasterisedDepthByCam(DrawingWindow& window, glm::vec3 cam_position, gl
 
 
 void move_CameraLeft(DrawingWindow& window, glm::vec3 &cam_position) {
-	cam_position.x -= 1;
+	cam_position.x += 1;
 	window.clearPixels();
 	std::cout << "Left" << std::endl;
 }
 
 
 void move_CameraRight(DrawingWindow& window, glm::vec3 &cam_position) {
-	cam_position.x += 1;
+	cam_position.x -= 1;
 	window.clearPixels();
 	std::cout << "Right" << std::endl;
 }
@@ -614,7 +703,7 @@ void rotate_Up(DrawingWindow& window, glm::vec3& cam_position) {
 }
 
 
-void rotate_Clock(DrawingWindow& window, glm::vec3& cam_position) {
+void rotate_AntiClock(DrawingWindow& window, glm::vec3& cam_position) {
 	//std::cout << "cam_position (init):" << cam_position.x << "," << cam_position.y << "," << cam_position.z << std::endl;
 	float degree = 0.01;
 	glm::mat3 rotateMat = glm::mat3(cos(degree), 0, sin(degree), 0, 1, 0, -sin(degree), 0, cos(degree));
@@ -623,7 +712,7 @@ void rotate_Clock(DrawingWindow& window, glm::vec3& cam_position) {
 }
 
 
-void look_Mid(glm::vec3& cam_position, glm::mat3& cameraOrMat) {
+void look_At(glm::vec3& cam_position, glm::mat3& cameraOrMat) {
 	glm::vec3 forward = glm::normalize(cam_position - glm::vec3(0, 0, 0));
 	glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0, 1, 0), forward));
 	glm::vec3 up = glm::normalize(glm::cross(forward, right));
@@ -639,17 +728,17 @@ void rotate_UpMat(DrawingWindow& window, glm::vec3& cam_position, glm::mat3& cam
 	float degree = 0.01;
 	glm::mat3 rotateMat = glm::mat3(1, 0, 0, 0, cos(degree), sin(degree), 0, -sin(degree), cos(degree));
 	cam_position = rotateMat * cam_position;
-	look_Mid(cam_position, cameraOrMat);
+	look_At(cam_position, cameraOrMat);
 	//std::cout << "cam_position:" << cam_position.x << "," << cam_position.y << "," << cam_position.z << std::endl;
 }
 
 
-void rotate_ClockMat(DrawingWindow& window, glm::vec3& cam_position, glm::mat3& cameraOrMat) {
+void rotate_AntiClockMat(DrawingWindow& window, glm::vec3& cam_position, glm::mat3& cameraOrMat) {
 	//std::cout << "cam_position (init):" << cam_position.x << "," << cam_position.y << "," << cam_position.z << std::endl;
 	float degree = 0.001;
 	glm::mat3 rotateMat = glm::mat3(cos(degree), 0, sin(degree), 0, 1, 0, -sin(degree), 0, cos(degree));
 	cam_position = rotateMat * cam_position;
-	look_Mid(cam_position, cameraOrMat);
+	look_At(cam_position, cameraOrMat);
 	//std::cout << "cam_position:" << cam_position.x << "," << cam_position.y << "," << cam_position.z << std::endl;
 }
 
@@ -661,10 +750,12 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 		else if (event.key.keysym.sym == SDLK_UP) move_CameraUp(window, cam_position);
 		else if (event.key.keysym.sym == SDLK_DOWN) move_CameraDown(window, cam_position);
         else if (event.key.keysym.sym == SDLK_q) rotate_Up(window, cam_position);
-        else if (event.key.keysym.sym == SDLK_w) rotate_Clock(window, cam_position);
+        else if (event.key.keysym.sym == SDLK_w) rotate_AntiClock(window, cam_position);
 
         else if (event.key.keysym.sym == SDLK_a) rotate_UpMat(window, cam_position, cameraOrMat);
-        else if (event.key.keysym.sym == SDLK_s) rotate_ClockMat(window, cam_position, cameraOrMat);
+        else if (event.key.keysym.sym == SDLK_s) rotate_AntiClockMat(window, cam_position, cameraOrMat);
+
+        else if (event.key.keysym.sym == SDLK_d) orbit = orbit ? false:true;
 
 		//else if (event.key.keysym.sym == SDLK_u)  draw_MultiTri(window);
 		//else if (event.key.keysym.sym == SDLK_f) draw_RandFillTri(window);
@@ -682,13 +773,18 @@ void draw(DrawingWindow &window){
     window.clearPixels();
     //draw_Red(window);
     //drawGradient(window);
+    //draw_TextureTriangle(window);
     //drawColorGradient(window);
     //drawLine(from, to, c, window);
     //draw_Point(window);
     //draw_Frame(window);
     //draw_Rasterised(window);
     //draw_RasterisedDepth(window);
-    draw_RasterisedDepthByCam(window, cam_position, cameraOrMat);
+    //draw_RasterisedDepthByCam(window, cam_position, cameraOrMat);
+
+    if (orbit == true) {
+        rotate_AntiClockMat(window, cam_position, cameraOrMat);
+    }
 }
 
 int main(int argc, char *argv[]) {
