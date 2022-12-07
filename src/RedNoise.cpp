@@ -73,7 +73,7 @@ std::vector<CanvasPoint> interpolateTexture(CanvasPoint from, CanvasPoint to, fl
 	return steps;
 }
 
-
+// DOES NOT WORK, DO NOT RUN.
 void draw_TextureLine(CanvasPoint from, CanvasPoint to, TextureMap texture, DrawingWindow &window){
     std::cout << "New Line" << std::endl;
 
@@ -121,10 +121,10 @@ void draw_LineDepth(CanvasPoint from, CanvasPoint to, Colour c, DrawingWindow &w
         float y = from.y + (yStepSize*i);
         float d = from.depth + (depthStepSize * i);
 
-        float depthInverse = 1 / d;
-        if (depthInverse > depthBuff[int(y)][int(x)])
+        float depth_inverse = 1 / d;
+        if (depth_inverse > depthBuff[int(y)][int(x)])
         {
-            depthBuff[int(y)][int(x)] = depthInverse;
+            depthBuff[int(y)][int(x)] = depth_inverse;
             window.setPixelColour(x, y, colour);
         }
         //window.setPixelColour(round(x), round(y), colour);
@@ -229,20 +229,20 @@ void draw_ColorGradient(DrawingWindow &window) {
 }
 
 
-void draw_LineScheme(CanvasPoint from, CanvasPoint to, Colour c, DrawingWindow& window, std::vector<float> &depthScheme) {
+void draw_LineScheme(CanvasPoint from, CanvasPoint to, Colour c, DrawingWindow& window, std::vector<float> &depth_scheme) {
 	std::vector<CanvasPoint> canvas_line = interpolateCanvasPointWithDepth(from, to, to.x - from.x);
 
 	if (canvas_line.size() == 1) {
 		int x = from.x;
 		int y = from.y;
-		float depthInverse = 1 / from.depth;
+		float depth_inverse = 1 / from.depth;
 
 		if (x < 0 || y < 0 || x + y * WIDTH >= HEIGHT * WIDTH || from.depth == 0) {
 			return;
 		}
 
-		if (depthInverse > depthScheme[x + y * WIDTH]) {
-			depthScheme[x + y * WIDTH] = depthInverse;
+		if (depth_inverse > depth_scheme[x + y * WIDTH]) {
+			depth_scheme[x + y * WIDTH] = depth_inverse;
 			uint32_t colourNumeric = (255 << 24) + (int(c.red) << 16) + (int(c.green) << 8) + int(c.blue);
 			window.setPixelColour(round(x), round(y), colourNumeric);
 		}
@@ -254,10 +254,10 @@ void draw_LineScheme(CanvasPoint from, CanvasPoint to, Colour c, DrawingWindow& 
 		int y = canvas.y;
 
 		if (x < 0 || y < 0 || x + y * WIDTH >= HEIGHT * WIDTH || canvas.depth == 0) continue;
-		float depthInverse = 1 / canvas.depth;
+		float depth_inverse = 1 / canvas.depth;
 
-		if (depthInverse > depthScheme[x + y * WIDTH]) {
-			depthScheme[x + y * WIDTH] = depthInverse;
+		if (depth_inverse > depth_scheme[x + y * WIDTH]) {
+			depth_scheme[x + y * WIDTH] = depth_inverse;
 			uint32_t colourNumeric = (255 << 24) + (int(c.red) << 16) + (int(c.green) << 8) + int(c.blue);
 			window.setPixelColour(round(x), round(y), colourNumeric);
 		}
@@ -335,7 +335,7 @@ void fill_TriangleTexture(CanvasTriangle tri, DrawingWindow &window){
     }
 }
 
-
+// DOES NOT WORK. DO NOT RUN --> CAUSE ERROR
 void draw_TextureTriangle(DrawingWindow &window){
     CanvasPoint t = CanvasPoint(160, 10);
     t.texturePoint = TexturePoint(195, 5);
