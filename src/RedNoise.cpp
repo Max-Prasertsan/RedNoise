@@ -549,8 +549,8 @@ void draw_Points(DrawingWindow &window){
 
     for(auto mt : t){
         for(int i = 0; i < 3; i ++){
-            CanvasPoint currentPoint = get_CanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[i], 2);
-            window.setPixelColour(round(currentPoint.x), round(currentPoint.y), colourNum);
+            CanvasPoint current_point = get_CanvasPoint(glm::vec3(0.0, 0.0, 4.0), mt.vertices[i], 2);
+            window.setPixelColour(round(current_point.x), round(current_point.y), colourNum);
         }
     }
 }
@@ -793,7 +793,7 @@ void draw(DrawingWindow &window){
 int main(int argc, char *argv[]) {
 	DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 	SDL_Event event;
-	int padding = 35;
+	int padding = 1;
 
 	//CanvasPoint from(0, 0);
 	//CanvasPoint to(window.width-1, window.height-1);
